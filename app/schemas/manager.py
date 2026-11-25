@@ -1,8 +1,7 @@
-
 from datetime import date, datetime
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class ApproveRequest(BaseModel):
@@ -11,6 +10,16 @@ class ApproveRequest(BaseModel):
 
 class RejectRequest(BaseModel):
     comment: str = Field(min_length=5, max_length=500)
+
+    @field_validator("comment")
+    @classmethod
+    def validate_comment(cls, value: str) -> str:
+        value = value.strip()
+
+        if len(value) < 5:
+            raise ValueError("Comment must contain at least 5 non-space characters")
+
+        return value
 
 
 class ManagerRequestResponse(BaseModel):

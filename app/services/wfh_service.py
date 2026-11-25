@@ -97,18 +97,30 @@ def create_wfh_request(
     return new_wfh
 
 
+
 def get_my_wfh(
     db: Session,
     employee_id: int,
+    status: str | None = None,
+    from_date: date | None = None,
+    to_date: date | None = None,
 ) -> list[WFH]:
 
-    requests = db.scalars(
-        select(WFH)
-        .where(WFH.employee_id == employee_id)
-        .order_by(WFH.created_at.desc())
+    query = select(WFH).where(WFH.employee_id == employee_id)
+
+    if status is not None:
+        query = query.where(WFH.status == status)
+
+    if from_date is not None:
+        query = query.where(WFH.end_date >= from_date)
+
+    if to_date is not None:
+        query = query.where(WFH.start_date <= to_date)
+
+    return db.scalars(
+        query.order_by(WFH.created_at.desc())
     ).all()
 
-    return requests
 
 
 def cancel_wfh_request(

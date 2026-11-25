@@ -1,7 +1,8 @@
 from datetime import date
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator, field_validator
+
 
 class LeaveResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -30,6 +31,16 @@ class LeaveCreate(BaseModel):
 
     reason: str | None = Field(default=None, max_length=500)
 
+    @field_validator("hours", mode="before")
+    @classmethod
+    def validate_hours_type(cls, value):
+        if isinstance(value, float) and not value.is_integer():
+            raise ValueError(
+                "Hours must be a whole number: choose 1, 2, or 3."
+            )
+
+        return value
+
     @model_validator(mode="after")
     def validate_duration(self):
         if self.duration_type == "FULL_DAY":
@@ -45,7 +56,7 @@ class LeaveCreate(BaseModel):
 
         elif self.duration_type == "HOURS":
             if self.hours not in (1, 2, 3):
-                raise ValueError("HOURS must be 1, 2, or 3")
+                raise ValueError("HOURS must be 1 to 3")
 
             if self.half is not None:
                 raise ValueError("HOURS must not contain half")
