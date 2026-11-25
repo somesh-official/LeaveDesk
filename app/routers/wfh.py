@@ -1,6 +1,8 @@
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
+from datetime import date
+from typing import Literal
 
 from app.database import get_db
 from app.dependencies.auth import get_current_user
@@ -12,12 +14,11 @@ from app.services.wfh_service import (
     cancel_wfh_request,
 )
 
-
 router = APIRouter(prefix="/wfh", tags=["Work From Home"])
 
 
 @router.post(
-    "/",
+    "",
     response_model=WFHResponse,
     status_code=status.HTTP_201_CREATED,
 )
@@ -40,15 +41,28 @@ def submit_wfh(
         )
 
 
+
 @router.get("/me", response_model=list[WFHResponse])
 def list_my_wfh(
+    status_filter: Literal[
+    "PENDING",
+    "APPROVED",
+    "REJECTED",
+    "CANCELLED",
+] | None = Query(default=None, alias="status"),
+    from_date: date | None = None,
+    to_date: date | None = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     return get_my_wfh(
         db=db,
         employee_id=current_user.id,
+        status=status_filter,
+        from_date=from_date,
+        to_date=to_date,
     )
+
 
 
 @router.post("/{wfh_id}/cancel", response_model=WFHResponse)
